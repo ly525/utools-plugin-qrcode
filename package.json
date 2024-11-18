@@ -7,11 +7,15 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "dom-to-image": "^2.6.0",
+    "mini.css": "^3.0.1",
+    "qrcode": "^1.5.4",
     "vue": "^2.6.12",
     "vue-template-compiler": "^2.7.14"
   },
   "devDependencies": {
     "vite": "^2.0.5",
+    "vite-copy-plugin": "^0.4.0",
     "vite-plugin-vue2": "^2.0.1"
   }
 }
