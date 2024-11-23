@@ -1,11 +1,16 @@
 <template>
   <div id="app">
     <div class="container">
+      <!-- <header>
+        <a href="#" class="logo">Logo</a>
+        <a href="#" class="button">Home</a>
+        <button>Download</button>
+      </header> -->
       <div class="row">
         <div class="col-sm-12 col-md-6 col-lg-12">
-          <div class="box-colored">
+          <div class="box-colored" >
             <fieldset>
-              <legend>二维码生成器</legend>
+              <legend>二维码生成</legend>
               <textarea
                 v-model="text"
                 rows="2"
@@ -27,21 +32,49 @@
             </fieldset>
           </div>
         </div>
+        <!-- <label for="drawer-control" class="drawer-toggle"></label>
+
+        <input type="checkbox" id="drawer-control" class="drawer" />
+        <div>
+          <label for="drawer-control" class="drawer-close"></label>
+          <a href="#">Home</a>
+        </div> -->
         <div class="col-sm-12 col-md-6 col-lg-12">
           <div class="box-colored qrimage-wrap">
-            <span
-              v-if="text"
-              class="icon-share"
-              style="position: absolute; right: 32px; top: 12px;; cursor: pointer"
-              @click="copy"
-            ></span>
+            <div
+              style="
+                position: absolute;
+                left: 12px;
+                top: 4px;
+                cursor: pointer;
+              "
+            >
+              <button
+                class="small rounded"
+                style="font-size: 11px"
+                @click="decodeScreenShot"
+              >
+                截图解码
+              </button>
+              <button
+                class="small rounded"
+                style="font-size: 11px"
+                @click="toggleDecordeRecords"
+              >
+                解码记录
+              </button>
+              <button
+                class="small rounded"
+                style="font-size: 11px"
+                @click="feedback"
+              >
+                反馈建议
+              </button>
+              <span v-if="text" class="icon-share" @click="copy"></span>
+            </div>
             <div v-if="text" ref="validQRCode">
               <div v-html="upText" class="up-text"></div>
-              <img
-                :src="qrImageUrl"
-                width="200"
-                height="200"
-              />
+              <img :src="qrImageUrl" width="200" height="200" />
               <div v-html="downText" class="down-text"></div>
             </div>
             <div v-else>
@@ -60,31 +93,40 @@
         <div class="col-sm col-lg-10"></div>
         <div class="col-sm-4 col-md"></div>
       </div>
-    </div>
 
-    <!-- <canvas ref="canvas" width="300" height="300"></canvas> -->
+      <div class="row" v-show="decordeRecordsVisible">
+        <div class="col-sm-12 col-md-12 col-lg-12">
+          <fieldset>
+            <legend>二维码解码</legend>
+            <table style="width: 100%" class="striped hoverable">
+              <thead>
+                <tr>
+                  <th>URL</th>
+                  <th>二维码</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, index) in decordeRecords" :key="index">
+                  <td data-label="Name">{{item.url}}</td>
+                  <td data-label="Name">
+                    <img v-if="item.qrImg"  :src="item.qrImg" width="50" height="50" />
+                    <button v-else class="small" style="font-size: 12px" @click="genQrRecord(item)">生成二维码</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </fieldset>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import QRCode from "qrcode";
 import domtoimage from "dom-to-image";
+import { jsQRFromBase64, showToast } from "./utils";
 
-const showToast = function(text) {
-  const toast = document.createElement("div");
-  toast.className = "toast-text";
-  toast.innerHTML = text;
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = "1";
-  }, 0);
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 300);
-  }, 2000);
-}
 
 export default {
   components: {},
@@ -93,6 +135,8 @@ export default {
     qrImageUrl: "",
     upText: "",
     downText: "",
+    decordeRecords: [],
+    decordeRecordsVisible: false,
   }),
   watch: {
     text(val) {
@@ -101,6 +145,41 @@ export default {
   },
   async mounted() {},
   methods: {
+    feedback() {
+      utools.shellOpenExternal("https://support.qq.com/product/676954");
+    },
+    genQrRecord(item) {
+      QRCode.toDataURL(item.url, { margin: 1 }, (err, url) => {
+        console.log(url);
+        item.qrImg = url;
+      });
+    },
+    toggleDecordeRecords() {
+      this.decordeRecordsVisible = !this.decordeRecordsVisible;
+      if (this.decordeRecordsVisible) {
+        // this.decordeRecords = utools.db.allDocs("decodeRecords");
+        this.decodeRecords = JSON.parse(utools.dbStorage.getItem("__decodeRecords__") || "[]");
+      }
+    },
+    insertRecord(content) {
+      this.decordeRecords.push({ url: content, qrImg: "" });
+      utools.dbStorage.setItem("__decodeRecords__", JSON.stringify(this.decordeRecords));
+    },
+    async decodeScreenShot() {
+      utools.hideMainWindow();
+      utools.screenCapture(async (base64Str) => {
+        utools.showMainWindow();
+        const res = await jsQRFromBase64(base64Str);
+        console.log(res);
+        if (res) {
+          this.text = res.data;
+          this.toggleDecordeRecords()
+          this.insertRecord(res.data);
+        } else {
+          showToast("❌ 未识别到二维码");
+        }
+      });
+    },
     // copy image(by dom-to-image) to clipboard
     copy() {
       domtoimage.toBlob(this.$refs.validQRCode).then(function (blob) {
@@ -131,6 +210,9 @@ export default {
       //   console.log("success!");
       // });
     },
+  },
+  created() {
+    console.log(window.utools);
   },
 };
 </script>
