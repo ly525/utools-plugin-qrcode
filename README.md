@@ -15,7 +15,7 @@
 ### 安装步骤
 方式1: 
 
-1. 访问：[插件网址：二维码大助手](https://u.tools/plugins/detail/%E4%BA%8C%E7%BB%B4%E7%A0%81%E5%8A%A9%E6%89%8B/) 
+1. 访问：[插件网址：二维码大助手](https://u.tools/plugins/detail/%E4%BA%8C%E7%BB%B4%E7%A0%81%E5%A4%A7%E5%8A%A9%E6%89%8B/) 
 2. 点击`启动`，拉起 uTools 之后，点击`获取`，即可安装。
 
 方式2:
